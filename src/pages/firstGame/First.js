@@ -105,10 +105,12 @@ const First = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.itemBox}>
-        <Animated.View style={[animatedDefault]}>
-          <Image source={prevImage} style={styles.image} resizeMode="contain" />
-        </Animated.View>
-        <Image source={image} style={styles.image} resizeMode="contain" />
+        <View style={styles.imageContainer}>
+          <Animated.View style={[animatedDefault]}>
+            <Image source={prevImage} style={styles.image} resizeMode="contain" />
+          </Animated.View>
+          <Image source={image} style={styles.image} resizeMode="contain" />
+        </View>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -134,6 +136,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFD1DC',
     justifyContent: 'center',
     alignItems: 'center',
+    display: 'flex',
     flex: 1,
   },
   itemBox: {
@@ -154,6 +157,22 @@ const styles = StyleSheet.create({
     elevation: 5,
     borderRadius: 10,
   },
+  imageContainer: {
+    position: 'relative',
+    alignSelf: 'stretch',
+    width: 150,
+    height: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 10,
+    // borderWidth: 1,
+  },
+
   buttonContainer: {
     display: 'flex',
     flexDirection: 'row',
@@ -176,12 +195,6 @@ const styles = StyleSheet.create({
     fontSize: 40,
     fontWeight: '100',
     color: '#C8C8C8FF',
-  },
-  image: {
-    width: 150,
-    height: 150,
-    borderRadius: 10,
-    // borderWidth: 1,
   },
 });
 
