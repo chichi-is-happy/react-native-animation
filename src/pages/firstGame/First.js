@@ -1,76 +1,37 @@
-import React, { useEffect, useState } from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  Button,
-  useColorScheme,
-  View,
-  TouchableOpacity,
-  Image,
-  Easing,
-} from 'react-native';
+import React, { useState } from 'react';
+import { SafeAreaView, StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import image1 from '../../images/1.jpeg';
-import image2 from '../../images/2.jpeg';
-import image3 from '../../images/3.jpeg';
-import image4 from '../../images/4.jpeg';
-import image5 from '../../images/5.jpeg';
-import image6 from '../../images/6.jpeg';
-import image7 from '../../images/7.jpeg';
-import image8 from '../../images/8.jpeg';
-import image9 from '../../images/9.jpeg';
-import image10 from '../../images/10.jpeg';
-import image11 from '../../images/11.jpeg';
-import image12 from '../../images/12.jpeg';
-import image13 from '../../images/13.jpeg';
-import image14 from '../../images/14.jpeg';
+import imageList from '../../const/imageList';
 
-import Animated, {
-  useSharedValue,
-  withSpring,
-  useAnimatedStyle,
-  useAnimatedProps,
-  withTiming,
-  withRepeat,
-  withSequence,
-} from 'react-native-reanimated';
-import { Svg, Circle } from 'react-native-svg';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 const First = () => {
-  const imageList = [
-    image1,
-    image2,
-    image3,
-    image4,
-    image5,
-    image6,
-    image7,
-    image8,
-    image9,
-    image10,
-    image11,
-    image12,
-    image13,
-    image14,
-  ];
   const [prevImage, setPrevImage] = useState(imageList[0]);
   const [image, setImage] = useState(imageList[0]);
   const [oList, setOList] = useState([]);
   const [xList, setXList] = useState([]);
   const [count, setCount] = useState(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const rotate = useSharedValue(0);
+
+  const animatedDefault = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { rotate: `${rotate.value}deg` },
+    ],
+    zIndex: -1,
+  }));
+
   const handleClickO = targetImage => {
     translateX.value = 0;
     setOList(oList => [...oList, targetImage]);
     setPrevImage(image);
     setCount(count => count + 1);
     setImage(imageList[count]);
-    // translateX.value = withSequence(withTiming(-300, { duration: 1000 }), withTiming(0));
-    translateX.value = withTiming(-300, { duration: 1000 });
+    translateX.value = withTiming(-500, { duration: 300 });
+    rotate.value = withTiming(-360, { duration: 500 });
 
     console.log('count 확인 ::::', count);
     console.log('oList 확인 ::::', oList);
@@ -84,32 +45,22 @@ const First = () => {
     setPrevImage(image);
     setCount(count => count + 1);
     setImage(imageList[count]);
-    // translateX.value = withSequence(withTiming(300, { duration: 1000 }), withTiming(0));
-    translateX.value = withTiming(300, { duration: 1000 });
-
+    translateX.value = withTiming(500, { duration: 300 });
+    rotate.value = withTiming(360, { duration: 500 });
     console.log('count 확인 ::::', count);
     console.log('xList 확인 ::::', xList);
     console.log('imageList 확인 ::::', imageList);
     console.log('image 확인:::', image);
   };
 
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(300);
-
-  const animatedDefault = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }, { translateY: translateY.value }],
-  }));
-
-  const duration = 2000;
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.itemBox}>
         <View style={styles.imageContainer}>
+          <Image source={image} style={styles.image} resizeMode="contain" />
           <Animated.View style={[animatedDefault]}>
             <Image source={prevImage} style={styles.image} resizeMode="contain" />
           </Animated.View>
-          <Image source={image} style={styles.image} resizeMode="contain" />
         </View>
       </View>
 
@@ -140,7 +91,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemBox: {
-    // borderWidth: 1,
+    borderWidth: 1,
+    borderColor: 'white',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -159,17 +111,15 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
-    alignSelf: 'stretch',
+
     width: 150,
     height: 150,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   image: {
     position: 'absolute',
     width: 150,
     height: 150,
-    borderRadius: 10,
+    borderRadius: 20,
     // borderWidth: 1,
   },
 
