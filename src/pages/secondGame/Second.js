@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -14,6 +14,8 @@ import Animated, {
   withSpring,
   useAnimatedStyle,
   withTiming,
+  useDerivedValue,
+  runOnJS,
 } from 'react-native-reanimated';
 
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -24,13 +26,11 @@ import { AnimatedView } from 'react-native-reanimated/lib/typescript/reanimated2
 const Second = () => {
   const [prevImage, setPrevImage] = useState(imageList[0]);
   const [image, setImage] = useState(imageList[0]);
-  const [oList, setOList] = useState([]);
-  const [xList, setXList] = useState([]);
-  const [count, setCount] = useState(1);
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
+  const [oImage, setOImage] = useState([]);
   const buttonX = useSharedValue(0);
   const buttonY = useSharedValue(0);
+  const bottomButtonX = useSharedValue(0);
+  const bottomButtonY = useSharedValue(0);
   const rotate = useSharedValue(0);
   const pressed = useSharedValue(false);
   const hover = useSharedValue(false);
@@ -41,12 +41,41 @@ const Second = () => {
   const originalX = useSharedValue(0);
   const originalY = useSharedValue(0);
   const layout = useSharedValue(0);
+  const imageIndex = useSharedValue(0);
+  // const imageListShared = useSharedValue(imageList);
+  const [imageListArray, setImageList] = useState(imageList);
+
   // 애플리케이션 창의 너비
   const windowWidth = Dimensions.get('window').width; // 393
   // 애플리케이션 창의 높이
   const windowHeight = Dimensions.get('window').height; // 852
   console.log('windowWidth:::', windowWidth);
   console.log('windowHeight:::', windowHeight);
+
+  // useEffect(() => {
+  //   const id = requestAnimationFrame(() => {
+  //     setImageList(prev => [...prev]);
+  //   });
+  //
+  //   return () => cancelAnimationFrame(id);
+  // }, [imageIndex.value]);
+
+  // useEffect(() => {
+  //   setImage(imageList[imageIndex.value]);
+  // }, [imageIndex]);
+
+  const index = useDerivedValue(() => imageIndex.value);
+
+  useEffect(() => {
+    console.log('derived', index.value);
+    setImage(imageList[index.value]);
+  }, [index.value]);
+
+  useEffect(() => {
+    console.log('확인:::', imageList);
+    // console.log('확인하기1', imageListArray); // [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    console.log('확인하기', imageListArray[imageIndex.value]);
+  }, [imageIndex.value]);
 
   // O 버튼이 있는 최소 X범위 <= offsetX <= O버튼 최대 X범위 &&
   // O 버튼이 있는 최소 Y범위 <= offsetY <= O버튼 최대 Y범위 이면
@@ -59,9 +88,21 @@ const Second = () => {
   // O 버튼 레이아웃 계산 함수 : 버튼의 세로, 가로, 부모로부터 x거리, 부모로부터 y거리
   const onButtonLayout = event => {
     layout.value = event.nativeEvent.layout;
+    console.log('top button ::', event.nativeEvent.layout);
     // 이미지의 X, Y 절대위치 저장
     buttonX.value = event.nativeEvent.layout.x;
     buttonY.value = event.nativeEvent.layout.y;
+
+    //  screen.width , screen.height
+    // RN 메소드 사용 - 디멘션 사용 -> 기기 화면 전체의 높이, 넓이를 가져옴
+  };
+
+  const onBottomButtonLayout = event => {
+    layout.value = event.nativeEvent.layout;
+    console.log('bottom button:::', event.nativeEvent.layout);
+    // 이미지의 X, Y 절대위치 저장
+    bottomButtonX.value = event.nativeEvent.layout.x;
+    bottomButtonY.value = event.nativeEvent.layout.y;
 
     //  screen.width , screen.height
     // RN 메소드 사용 - 디멘션 사용 -> 기기 화면 전체의 높이, 넓이를 가져옴
@@ -81,14 +122,8 @@ const Second = () => {
       const absoluteY = event.absoluteY;
       // console.log('absoluteX:::', absoluteX);
       // console.log('absoluteX:::', absoluteX);
-
       // console.log('layout.value.width:::', layout.value.width);
-
       // console.log('offsetY.value:::', offsetY.value);
-      // event.translationY 는 원래 이미지 위치로부터의 거리가 됨
-      // 즉, 왼쪽으로 2 이동 ::: -2 로 변경됨
-      // 현재 마우스 위치 (이미지의 절대위치)를 가져와야 함
-
       // console.log('buttonX.value:::', buttonX.value); // 146
       // console.log(' buttonY.value:::', buttonY.value); // 213
       // console.log('absoluteY:::', absoluteY);
@@ -115,7 +150,21 @@ const Second = () => {
       // offsetX.value = withSpring(0);
       // offsetY.value = withSpring(0);
       pressed.value = false;
-      hover.value = false;
+      // O 자리에 놓았으면
+
+      if (hover.value === true) {
+        console.log('O 자리에 놓음');
+        hover.value = false;
+        imageIndex.value = imageIndex.value + 1;
+        // imageListShared.value = imageListShared.value[imageIndex.value];
+        console.log('imageIndex:::', imageIndex.value);
+        // imageIndex.value = (imageIndex.value + 1) % imageList.length;
+        offsetX.value = withSpring(0);
+        offsetY.value = withSpring(0);
+        // setImage(imageList[imageIndex.value]);
+        const newImage = imageList[imageIndex.value];
+        runOnJS(setImage)(newImage);
+      }
     });
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -129,76 +178,65 @@ const Second = () => {
 
   const animatedButton = useAnimatedStyle(() => ({
     backgroundColor: hover.value ? '#f81f43' : 'transparent',
-    // display: 'flex',
-    // alignItems: 'center',
-    // justifyContent: 'center',
     transform: [
       { translateX: buttonX.value },
       { translateY: buttonY.value },
-      // { scale: withTiming(hover.value ? 2 : 1) },
       { scale: withTiming(hover.value ? 1.5 : 1) },
     ],
   }));
 
-  const handleClickO = targetImage => {
-    translateX.value = 0;
-    setOList(oList => [...oList, targetImage]);
-    setPrevImage(image);
-    setCount(count => count + 1);
-    setImage(imageList[count]);
-    translateX.value = withTiming(-500, { duration: 300 });
-    rotate.value = withTiming(-360, { duration: 500 });
-
-    console.log('count 확인 ::::', count);
-    console.log('oList 확인 ::::', oList);
-    console.log('imageList 확인 ::::', imageList);
-    console.log('image 확인:::', image);
-  };
-
-  const handleClickX = targetImage => {
-    translateX.value = 0;
-    setXList(oList => [...oList, targetImage]);
-    setPrevImage(image);
-    setCount(count => count + 1);
-    setImage(imageList[count]);
-    translateX.value = withTiming(500, { duration: 300 });
-    rotate.value = withTiming(360, { duration: 500 });
-    console.log('count 확인 ::::', count);
-    console.log('xList 확인 ::::', xList);
-    console.log('imageList 확인 ::::', imageList);
-    console.log('image 확인:::', image);
-  };
+  const bottomAnimatedButton = useAnimatedStyle(() => ({
+    backgroundColor: hover.value ? '#f81f43' : 'transparent',
+    width: 100,
+    height: 100,
+    transform: [
+      { translateX: bottomButtonX.value },
+      { translateY: bottomButtonY.value },
+      { scale: withTiming(hover.value ? 1.5 : 1) },
+    ],
+  }));
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
-        <Animated.View style={[animatedButton]} onLayout={onButtonLayout}>
-          <TouchableOpacity style={styles.button} title="O" onPress={() => handleClickO(image)}>
+        {/*<View style={{ width: 100, height: 100 }}>*/}
+        {/*<Animated.View style={([animatedButton], { width: 100 })} onLayout={onButtonLayout}>*/}
+        <Animated.View
+          style={([animatedButton], { width: 100, height: 100 })}
+          onLayout={onButtonLayout}
+        >
+          {/*<View style={{ width: 100, height: 100 }}>*/}
+          <TouchableOpacity style={styles.button} title="O">
             <Text style={styles.buttonText}>O</Text>
           </TouchableOpacity>
+          {/*</View>*/}
         </Animated.View>
+        {/*</View>*/}
 
         <View style={styles.itemBox}>
           <View style={styles.imageContainer}>
             <GestureDetector gesture={pan}>
               <Animated.View style={[animatedStyle]}>
-                <Image source={image} style={styles.image} resizeMode="contain" />
+                <Image
+                  source={image}
+                  // source={imageListArray[imageIndex.value]}
+                  style={styles.image}
+                  resizeMode="contain"
+                />
+                {/*<Image source={image} style={styles.image} resizeMode="contain" />*/}
               </Animated.View>
             </GestureDetector>
           </View>
         </View>
-        {/*<Animated.View style={[animatedButton]} onLayout={onButtonLayout}>*/}
-        <View style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <TouchableOpacity
-            style={styles.button}
-            title="X"
-            onPress={() => {
-              handleClickX(image);
-            }}
-          >
+
+        <Animated.View
+          onLayout={onBottomButtonLayout}
+          style={([bottomAnimatedButton], { width: 100, height: 100 })}
+        >
+          <TouchableOpacity style={styles.button} title="X">
             <Text style={styles.buttonText}>X</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -207,14 +245,9 @@ const Second = () => {
 const styles = StyleSheet.create({
   container: {
     // backgroundColor: '#FFD1DC',
-    // display: 'flex',
-    // flexDirection: 'column',
     alignItems: 'center',
-    // flex: 1,
-    display: 'flex',
+    justifyContent: 'center',
     flexDirection: 'column',
-    justifyContent: 'flex-start',
-    // alignItems: 'stretch',
     flex: 1,
   },
   itemBox: {
@@ -237,14 +270,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   imageContainer: {
-    position: 'relative',
+    // position: 'relative',
     width: 150,
     height: 150,
   },
   image: {
-    position: 'absolute',
-    // width: 150,
-    // height: 150,
+    // position: 'absolute',
     width: 80,
     height: 80,
     borderRadius: 20,
