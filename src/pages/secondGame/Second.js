@@ -48,18 +48,6 @@ const Second = () => {
   console.log('windowWidth:::', windowWidth);
   console.log('windowHeight:::', windowHeight);
 
-  // const index = useDerivedValue(() => imageIndex.value);
-  //
-  // useEffect(() => {
-  //   console.log('derived', index.value);
-  //   setImage(imageList[index.value]);
-  // }, [index.value]);
-  //
-  // useEffect(() => {
-  //   console.log('확인:::', imageList);
-  //   console.log('확인하기', image[imageIndex.value]);
-  // }, [imageIndex.value]);
-
   const onTopButtonLayout = event => {
     topButtonLayout.value = event.nativeEvent.layout;
     console.log('top button ::', event.nativeEvent.layout);
@@ -122,10 +110,7 @@ const Second = () => {
       }
     })
     .onFinalize(() => {
-      // offsetX.value = withSpring(0);
-      // offsetY.value = withSpring(0);
       pressed.value = false;
-      // O 자리에 놓았으면
 
       if (hoverO.value === true) {
         console.log('O 자리에 놓음');
@@ -138,7 +123,6 @@ const Second = () => {
         // imageIndex.value = (imageIndex.value + 1) % imageList.length;
         offsetX.value = withSpring(0);
         offsetY.value = withSpring(0);
-        // setImage(imageList[imageIndex.value]);
         const newImage = imageList[imageIndex.value];
         runOnJS(setImage)(newImage);
         console.log('O 리스트 ::: ', oList);
@@ -147,9 +131,7 @@ const Second = () => {
         hoverX.value = false;
         runOnJS(setXList)(prevXList => [...prevXList, imageList[imageIndex.value]]);
         imageIndex.value = imageIndex.value + 1;
-        // imageListShared.value = imageListShared.value[imageIndex.value];
         console.log('imageIndex:::', imageIndex.value);
-        // imageIndex.value = (imageIndex.value + 1) % imageList.length;
         offsetX.value = withSpring(0);
         offsetY.value = withSpring(0);
         const newImage = imageList[imageIndex.value];
@@ -162,11 +144,13 @@ const Second = () => {
     });
 
   const animatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: pressed.value ? '#FFE04B' : '#B58DF1',
+    // backgroundColor: pressed.value ? '#FFE04B' : '#B58DF1',
+    display: 'flex',
+    alignItems: 'center',
     transform: [
       { translateX: offsetX.value },
       { translateY: offsetY.value },
-      // { scale: withTiming(pressed.value ? 1.5 : 1) },
+      { scale: withTiming(pressed.value ? 1.5 : 1) },
     ],
   }));
 
@@ -181,8 +165,6 @@ const Second = () => {
 
   const bottomAnimatedButton = useAnimatedStyle(() => ({
     backgroundColor: hoverX.value ? '#f81f43' : 'transparent',
-    width: 100,
-    height: 100,
     transform: [
       { translateX: bottomButtonX.value },
       { translateY: bottomButtonY.value },
@@ -203,18 +185,16 @@ const Second = () => {
         </Animated.View>
 
         <View style={styles.itemBox}>
-          <View style={styles.imageContainer}>
-            <GestureDetector gesture={pan}>
-              <Animated.View style={[animatedStyle]}>
-                <Image source={image} style={styles.image} resizeMode="contain" />
-              </Animated.View>
-            </GestureDetector>
-          </View>
+          <GestureDetector gesture={pan}>
+            <Animated.View style={[animatedStyle]}>
+              <Image source={image} style={styles.image} resizeMode="contain" />
+            </Animated.View>
+          </GestureDetector>
         </View>
 
         <Animated.View
-          onLayout={onBottomButtonLayout}
           style={([bottomAnimatedButton], { width: 100, height: 100 })}
+          onLayout={onBottomButtonLayout}
         >
           <TouchableOpacity style={styles.button} title="X">
             <Text style={styles.buttonText}>X</Text>
@@ -227,7 +207,7 @@ const Second = () => {
 
 const styles = StyleSheet.create({
   container: {
-    // backgroundColor: '#FFD1DC',
+    backgroundColor: '#FFD1DC',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'column',
@@ -252,17 +232,11 @@ const styles = StyleSheet.create({
     elevation: 5,
     borderRadius: 10,
   },
-  imageContainer: {
-    // position: 'relative',
-    width: 150,
-    height: 150,
-  },
   image: {
-    // position: 'absolute',
     width: 80,
     height: 80,
     borderRadius: 20,
-    // borderWidth: 1,
+    zIndex: 9999,
   },
 
   button: {
@@ -274,7 +248,9 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: 'white',
     borderWidth: 1,
+    borderColor: '#c7c7c7',
     color: '#FFD1DC',
+    zIndex: -1,
   },
   buttonText: {
     fontSize: 40,
