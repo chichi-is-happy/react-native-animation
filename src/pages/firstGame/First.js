@@ -5,6 +5,8 @@ import imageList from '../../const/imageList';
 
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
+let accumulatedRotation = 0;
+
 const First = () => {
   const [prevImage, setPrevImage] = useState(imageList[0]);
   const [image, setImage] = useState(imageList[0]);
@@ -21,7 +23,7 @@ const First = () => {
       { translateY: translateY.value },
       { rotate: `${rotate.value}deg` },
     ],
-    zIndex: -1,
+    zIndex: 999,
   }));
 
   const handleClickO = targetImage => {
@@ -31,7 +33,8 @@ const First = () => {
     setCount(count => count + 1);
     setImage(imageList[count]);
     translateX.value = withTiming(-500, { duration: 300 });
-    rotate.value = withTiming(-360, { duration: 500 });
+    accumulatedRotation += 360;
+    rotate.value = withTiming(accumulatedRotation, { duration: 500 });
 
     console.log('count 확인 ::::', count);
     console.log('oList 확인 ::::', oList);
@@ -46,7 +49,9 @@ const First = () => {
     setCount(count => count + 1);
     setImage(imageList[count]);
     translateX.value = withTiming(500, { duration: 300 });
-    rotate.value = withTiming(360, { duration: 500 });
+    accumulatedRotation += 360;
+    rotate.value = withTiming(accumulatedRotation, { duration: 500 });
+
     console.log('count 확인 ::::', count);
     console.log('xList 확인 ::::', xList);
     console.log('imageList 확인 ::::', imageList);
@@ -57,11 +62,19 @@ const First = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.itemBox}>
         <View style={styles.imageContainer}>
-          <Image source={image} style={styles.image} resizeMode="contain" />
-          <Animated.View style={[animatedDefault]}>
-            <Image source={prevImage} style={styles.image} resizeMode="contain" />
-          </Animated.View>
+          {count !== 1 && (
+            <Animated.View style={[animatedDefault]}>
+              <View style={styles.itemBox}>
+                <Image
+                  source={prevImage}
+                  style={[styles.image, { zIndex: 999 }]}
+                  resizeMode="contain"
+                />
+              </View>
+            </Animated.View>
+          )}
         </View>
+        <Image source={image} style={styles.image} resizeMode="contain" />
       </View>
 
       <View style={styles.buttonContainer}>
