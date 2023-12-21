@@ -97,7 +97,7 @@ const First = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFD1DC',
+    // backgroundColor: '#FFD1DC',
     justifyContent: 'center',
     alignItems: 'center',
     display: 'flex',

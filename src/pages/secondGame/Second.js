@@ -207,7 +207,7 @@ const Second = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFD1DC',
+    // backgroundColor: '#FFD1DC',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'column',
