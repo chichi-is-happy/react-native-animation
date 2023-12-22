@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   PanResponder,
+  StatusBar,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import imageList from '../../const/imageList';
@@ -17,122 +18,193 @@ import Animated, {
   withTiming,
   useDerivedValue,
   runOnJS,
+  useAnimatedReaction,
+  useAnimatedProps,
+  interpolate,
+  Extrapolate,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { AnimatedImage } from 'react-native-reanimated/lib/typescript/reanimated2/component/Image';
 
 const SecondTest = () => {
-  const [image, setImage] = useState(imageList[0]);
-  const [nextImage, setNextImage] = useState(imageList[1]);
+  const [images, setImageList] = useState(imageList);
   const offsetX = useSharedValue(0);
-  const scale = useSharedValue(0);
-  const imageIndex = useSharedValue(0);
-  const nextImageIndex = useSharedValue(1);
+  // const scale = useSharedValue(0);
+  // const rotate = useSharedValue(0);
 
-  // const pan = Gesture.Pan()
-  //   .onBegin(() => {
-  //     console.log('시작');
-  //   })
-  //   .onChange(e => {
-  //     console.log('진행중');
-  //   })
-  //   .onFinalize(() => {
-  //     console.log('종료');
-  //   });
+  const rotate = useDerivedValue(() => {
+    return Math.abs(offsetX.value);
+  });
 
-  // const gestureHandler = useAnimatedGestureHandler({
-  //   onStart: (_, ctx) => {
-  //     ctx.startX = offsetX.value;
-  //   },
-  //   onActive: (event, ctx) => {
-  //     offsetX.value = ctx.startX + event.translationX;
-  //   },
-  //   onEnd: _ => {
-  //     offsetX.value = withTiming(0, { duration: 500, easing: Easing.bounce }); // 원래 위치로 복귀
-  //   },
-  // });
+  const scale = useDerivedValue(() => {
+    return Math.min(Math.abs(offsetX.value) / 200, 1);
+  });
+  const handleChoice = direction => {
+    offsetX.value = 0;
+    offsetX.value = withTiming(direction * 500, { duration: 300 });
+    // rotate.value = Math.abs(offsetX.value);
+
+    console.log('이전 스케일 확인 :::', scale.value);
+    console.log('이전 rotate 확인 :::', rotate.value);
+    console.log('이전 스케일 확인 :::', scale.value);
+    console.log('offsetX.value 확인 :::', offsetX.value);
+    handleMoveImages(images);
+    // scale.value = Math.min(Math.abs(offsetX.value) / 200, 1);
+    console.log('이후 스케일 확인 :::', scale.value);
+    console.log('이후 rotate 확인 :::', rotate.value);
+  };
+
+  const handleMoveImages = images => {
+    const newImageList = [...images];
+    const movedImages = newImageList.splice(0, 1);
+    newImageList.push(...movedImages);
+    console.log('images. 배열 확인 ', newImageList);
+    runOnJS(setImageList)(newImageList); // 이미지 리스트 상태 업데이트
+  };
+
+  // 음수인지, 양수인지 확인 후 좌/우로 이동시킴
+  const direction = Math.sign(offsetX);
 
   const pan = Gesture.Pan()
     .onBegin(() => {
       console.log('시작');
-      scale.value = 0;
+      console.log('시작 당시 images:::', images);
+      offsetX.value = 0;
+      // scale.value = 0;
     })
     .onChange(event => {
       offsetX.value = event.translationX;
       // 1. 뒤의 이미지가 나타나기 : offsetX.value 절댓값이 늘어나면 scale.value 값도 함께 늘어남
-      if (Math.abs(offsetX.value) >= 0) {
-        scale.value = Math.min(Math.abs(offsetX.value) / 200, 1); // 최대 스케일을 1로 설정
-      }
-
-      // 2. x가 100 이상일 경우 (넘어가면) 해당 이미지가 아예 바깥으로 넘어가는 애니메이션
-      if (Math.abs(offsetX.value) >= 100) {
-        offsetX.value = withTiming(-1000, { duration: 100 }, () => {
-          // 애니메이션이 완료된 후에 이미지 인덱스를 교환하고 offsetX를 리셋합니다.
-          let temp = imageIndex.value;
-          imageIndex.value = nextImageIndex.value;
-          nextImageIndex.value = temp + 1;
-          offsetX.value = 0;
-        });
-        scale.value = 1;
-
-        if (imageIndex.value < imageList.length - 2) {
-          imageIndex.value += 1;
-          nextImageIndex.value += 1;
-        }
-      }
-
-      // 3. 다음 이미지를 현재 이미지로 사용할 수 있어야 함
-      //
+      // if (Math.abs(offsetX.value) >= 0) {
+      //   scale.value = Math.min(Math.abs(offsetX.value) / 200, 1); // 최대 스케일을 1로 설정
+      //   // 2. 움직일 때 rotate는 offSetX.value에 비례해서 변경됨
+      //   rotate.value = Math.abs(offsetX.value);
+      // }
     })
+
+    // 3. 다음 이미지를 현재 이미지로 사용할 수 있어야 함
+    //
     .onEnd(() => {
-      // 뒤의 이미지와 앞의 이미지의 상태를 바꿔줍니다.
-      let temp = imageIndex.value;
-      imageIndex.value = nextImageIndex.value;
-      nextImageIndex.value = temp + 1;
-      console.log('imageIndex:::', imageIndex.value);
-      console.log('nextImageIndex:::', nextImageIndex.value);
-      offsetX.value = 0;
+      // 스와이프 완료
+      if (Math.abs(offsetX.value) >= 80) {
+        offsetX.value = withTiming(direction * 500, { duration: 300 });
+        // offsetX.value = withTiming(0, { duration: 0 });
+        // offsetX.value = 0;
+        runOnJS(handleMoveImages)(images);
+        // rotate.value = 0;
+        offsetX.value = 0;
+      } else {
+        offsetX.value = withSpring(0, { duration: 300 });
+        // rotate.value = 0;
+      }
     });
 
-  const backImagePan = Gesture.Pan();
+  // const rotate = Animated.multiply(swipe.x, titlSign).interpolate({
+  //   inputRange: [-100, 0, 100],
+  //   outputRange: ['8deg', '0deg', '-8deg'],
+  // });
+
+  // const rotate = interpolate(offsetX.value, [-100, 0, 100], ['8deg', '0deg', '-8deg']);
 
   const frontImageStyle = useAnimatedStyle(() => ({
-    display: 'flex',
+    transform: [{ translateX: offsetX.value }, { rotate: `${rotate.value}deg` }],
     alignItems: 'center',
-    width: 100,
-    height: 100,
-    transform: [{ translateX: offsetX.value }],
-  }));
-
-  const topAnimatedButton = useAnimatedStyle(() => ({
-    transform: [{ translateX: offsetX.value }],
+    justifyContent: 'center',
   }));
 
   const backImageStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: -1,
   }));
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView>
-        <View
-          style={{ alignItems: 'center', justifyContent: 'center', flex: 1, position: 'relative' }}
-        >
-          {/*앞의 이미지*/}
-          <GestureDetector gesture={pan}>
-            <Animated.View style={[frontImageStyle]}>
-              <Image source={imageList[imageIndex.value]} style={{ width: 100, height: 100 }} />
-            </Animated.View>
-          </GestureDetector>
-          {/*뒤의 이미지 */}
-          <GestureDetector gesture={backImagePan}>
-            <Animated.View style={[backImageStyle]}>
-              <Image source={imageList[nextImageIndex.value]} style={{ width: 100, height: 100 }} />
-            </Animated.View>
-          </GestureDetector>
+    <Animated.View
+      style={{
+        flex: 1,
+        backgroundColor: '#FFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+      }}
+    >
+      <StatusBar hidden={true} />
+
+      <GestureHandlerRootView>
+        {/*앞의 이미지*/}
+        <GestureDetector gesture={pan}>
+          <Animated.View style={[frontImageStyle]}>
+            <View style={styles.imageContainer}>
+              <Image source={images[0]} style={styles.image} />
+            </View>
+          </Animated.View>
+        </GestureDetector>
+
+        {/*뒤의 이미지 */}
+        <Animated.View style={[backImageStyle]}>
+          <View style={styles.imageContainer}>
+            <Image source={images[1]} style={styles.image} />
+          </View>
+        </Animated.View>
+
+        {/* 버튼 */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.button} title="O" onPress={() => handleChoice(-1)}>
+            <Text style={styles.buttonText}>O</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button}
+            title="X"
+            onPress={() => {
+              handleChoice(1);
+            }}
+          >
+            <Text style={styles.buttonText}>X</Text>
+          </TouchableOpacity>
         </View>
-      </SafeAreaView>
-    </GestureHandlerRootView>
+      </GestureHandlerRootView>
+    </Animated.View>
   );
 };
+
+const styles = StyleSheet.create({
+  imageContainer: {
+    position: 'absolute',
+  },
+  image: {
+    width: 100,
+    height: 100,
+    borderWidth: 1,
+    borderRadius: 20,
+    // zIndex: 99999,
+  },
+  buttonContainer: {
+    // position: 'absolute',
+    top: 200,
+    alignContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    width: 200,
+  },
+  button: {
+    // position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 50,
+    height: 50,
+    borderRadius: 50,
+    // backgroundColor: 'white',
+    borderWidth: 1,
+    color: '#FFD1DC',
+  },
+  buttonText: {
+    // position: 'absolute',
+    fontSize: 40,
+    fontWeight: '100',
+    // color: '#C8C8C8FF',
+  },
+});
 
 export default SecondTest;
