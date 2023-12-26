@@ -6,9 +6,8 @@ import { AppRegistry } from 'react-native';
 import App from './App';
 import First from './src/pages/firstGame/First';
 import Second from './src/pages/secondGame/Second';
+import SecondTest from './src/pages/secondGame/SecondTest';
 import { name as appName } from './app.json';
-import Test from './src/pages/firstGame/Test';
-import SecondTest from './src/pages/firstGame/SecondTest';
 
 // AppRegistry.registerComponent(appName, () => Second);
 // AppRegistry.registerComponent(appName, () => First, {

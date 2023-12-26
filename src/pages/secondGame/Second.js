@@ -21,7 +21,6 @@ import Animated, {
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import imageList from '../../const/imageList';
-import { AnimatedView } from 'react-native-reanimated/lib/typescript/reanimated2/component/View';
 
 const Second = () => {
   const [prevImage, setPrevImage] = useState(imageList[0]);
