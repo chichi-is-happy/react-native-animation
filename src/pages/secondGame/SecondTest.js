@@ -17,6 +17,7 @@ import Animated, {
   withTiming,
   useDerivedValue,
   runOnJS,
+  withSequence,
 } from 'react-native-reanimated';
 
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -28,27 +29,41 @@ const SecondTest = () => {
   const hoverO = useSharedValue(false);
   const imageX = useSharedValue(0);
   const imageY = useSharedValue(0);
-  const topButtonX = useSharedValue(0);
-  const topButtonY = useSharedValue(0);
+  // const topButtonX = useSharedValue(0);
+  // const topButtonY = useSharedValue(0);
+  const scale = useSharedValue(0);
+  const buttonLayout = useSharedValue({ x: 0, y: 0, width: 0, height: 0 });
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const opacity = useSharedValue(1);
+  const onButtonLayout = event => {
+    const layout = event.nativeEvent.layout;
+    buttonLayout.value = layout;
+  };
 
   const imageStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: imageX.value }, { translateY: imageY.value }],
+    transform: [{ scale: scale.value }, { translateX: imageX.value }, { translateY: imageY.value }],
     alignItems: 'center',
     justifyContent: 'center',
+    opacity: opacity.value,
   }));
 
   const topButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: topButtonX.value }, { translateY: topButtonY.value }],
+    transform: [{ translateX: buttonLayout.value.x }, { translateY: buttonLayout.value.y }],
     alignItems: 'center',
     justifyContent: 'center',
   }));
 
-  const onTopButtonLayout = event => {
-    topButtonLayout.value = event.nativeEvent.layout;
-    console.log('top button ::', event.nativeEvent.layout);
-    topButtonX.value = event.nativeEvent.layout.x;
-    topButtonY.value = event.nativeEvent.layout.y;
-  };
+  // const onTopButtonLayout = event => {
+  //   topButtonLayout.value = event.nativeEvent.layout;
+  //   console.log('top button ::', event.nativeEvent.layout);
+  //   topButtonX.value = event.nativeEvent.layout.x;
+  //   topButtonY.value = event.nativeEvent.layout.y;
+  // };
+
+  // 이미지 크기가 증가하는 애니메이션
+  useEffect(() => {
+    scale.value = withSpring(1);
+  }, []);
 
   const pan = Gesture.Pan()
     .onBegin(() => {
@@ -60,7 +75,76 @@ const SecondTest = () => {
     })
     .onFinalize(() => {
       console.log('종료');
+      runOnJS(updateCurrentIndexAndScale)();
     });
+
+  function updateCurrentIndexAndScale() {
+    setCurrentImageIndex(prevIndex => {
+      const nextIndex = (prevIndex + 1) % images.length;
+      return nextIndex;
+    });
+
+    withSequence(
+      withSpring()(
+        (scale.value = withSpring(0, {}, () => {
+          opacity.value = 0;
+          imageX.value = 0;
+          imageY.value = 0;
+        })),
+      ),
+      (scale.value = withSpring(0, {}, () => {
+        opacity.value = 0;
+        // imageX.value = 0;
+        // imageY.value = 0;
+
+        scale.value = withSpring(1);
+        opacity.value = withSpring(1);
+      })),
+    );
+
+    // imageX.value = 0;
+    // imageY.value = 0;
+  }
+
+  // function updateCurrentIndexAndScale() {
+  //   setCurrentImageIndex(prevIndex => {
+  //     const nextIndex = (prevIndex + 1) % images.length;
+  //     return nextIndex;
+  //   });
+  //
+  //   scale.value = withSpring(0, {}, () => {
+  //     opacity.value = 0;
+  //     imageX.value = 0;
+  //     imageY.value = 0;
+  //   });
+  //
+  //   // imageX.value = 0;
+  //   // imageY.value = 0;
+  //   scale.value = withSpring(0, {}, () => {
+  //     opacity.value = 0;
+  //     // imageX.value = 0;
+  //     // imageY.value = 0;
+  //
+  //     scale.value = withSpring(1);
+  //     opacity.value = withSpring(1);
+  //   });
+  // }
+
+  // function updateCurrentIndexAndScale() {
+  //   setCurrentImageIndex(prevIndex => {
+  //     const nextIndex = (prevIndex + 1) % images.length;
+  //     return nextIndex;
+  //   });
+  //
+  //   scale.value = withSpring(0, {}, () => {
+  //     opacity.value = 0;
+  //     imageX.value = 0;
+  //     imageY.value = 0;
+  //
+  //     scale.value = withSpring(1);
+  //     // opacity.value = withSpring(1);
+  //   });
+  // }
 
   return (
     <Animated.View
@@ -85,7 +169,7 @@ const SecondTest = () => {
           <GestureDetector gesture={pan}>
             <Animated.View style={[imageStyle]}>
               <View style={styles.imageContainer}>
-                <Image source={images[0]} style={styles.image} />
+                <Image source={images[currentImageIndex]} style={styles.image} />
               </View>
             </Animated.View>
           </GestureDetector>
