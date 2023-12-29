@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -29,13 +29,29 @@ const SecondTest = () => {
   const hoverO = useSharedValue(false);
   const imageX = useSharedValue(0);
   const imageY = useSharedValue(0);
-  // const topButtonX = useSharedValue(0);
-  // const topButtonY = useSharedValue(0);
   const scale = useSharedValue(0);
-  const buttonLayout = useSharedValue({ x: 0, y: 0, width: 0, height: 0 });
+  // const topButtonLayout = useSharedValue({ width: 0, height: 0, pageX: 0, pageY: 0 });
+  const bottomButtonLayout = useSharedValue({ width: 0, height: 0, pageX: 0, pageY: 0 });
+  const upperButtonScale = useSharedValue(1);
+  const lowerButtonScale = useSharedValue(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const opacity = useSharedValue(1);
-  const onButtonLayout = event => {
+  const [topButtonLayout, setTopButtonLayout] = useState({ pageX: 0, pageY: 0, width: 0, x: 0 });
+
+  useEffect(() => {
+    console.log('topButtonLayout:::', topButtonLayout);
+  }, [topButtonLayout]);
+
+  const increaseButtonSize = buttonScale => {
+    buttonScale.value = 1.5;
+    console.log('increaseButtonSize를 실행 ');
+  };
+
+  const resetButtonSize = buttonScale => {
+    buttonScale.value = 1; // 원래 크기로 복구
+  };
+
+  const onButtonLayout = (event, buttonLayout) => {
     const layout = event.nativeEvent.layout;
     buttonLayout.value = layout;
   };
@@ -48,17 +64,20 @@ const SecondTest = () => {
   }));
 
   const topButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: buttonLayout.value.x }, { translateY: buttonLayout.value.y }],
-    alignItems: 'center',
-    justifyContent: 'center',
+    transform: [
+      { translateX: topButtonLayout.pageX && topButtonLayout.pageX },
+      { translateY: topButtonLayout.pageY && topButtonLayout.pageY },
+      { scale: upperButtonScale.value },
+    ],
   }));
 
-  // const onTopButtonLayout = event => {
-  //   topButtonLayout.value = event.nativeEvent.layout;
-  //   console.log('top button ::', event.nativeEvent.layout);
-  //   topButtonX.value = event.nativeEvent.layout.x;
-  //   topButtonY.value = event.nativeEvent.layout.y;
-  // };
+  const bottomButtonStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: bottomButtonLayout.value.pageX },
+      { translateY: bottomButtonLayout.value.pageY },
+      { scale: lowerButtonScale.value },
+    ],
+  }));
 
   // 이미지 크기가 증가하는 애니메이션
   useEffect(() => {
@@ -72,6 +91,22 @@ const SecondTest = () => {
     .onChange(event => {
       imageX.value = event.translationX;
       imageY.value = event.translationY;
+
+      if (
+        // event.translationX >= topButtonLayout.value.pageX &&
+        // event.translationX <= topButtonLayout.value.pageX + topButtonLayout.value.width &&
+        // event.translationY >= topButtonLayout.value.y &&
+        // event.translationY <= topButtonLayout.value.y + topButtonLayout.value.height
+        event.translationX
+        //
+      ) {
+        runOnJS(increaseButtonSize)(upperButtonScale);
+        upperButtonScale.value = 2;
+        console.log('버튼 범위 안');
+      } else {
+        upperButtonScale.value = 1;
+        runOnJS(resetButtonSize)(upperButtonScale);
+      }
     })
     .onFinalize(() => {
       console.log('종료');
@@ -94,73 +129,58 @@ const SecondTest = () => {
       ),
       (scale.value = withSpring(0, {}, () => {
         opacity.value = 0;
-        // imageX.value = 0;
-        // imageY.value = 0;
-
         scale.value = withSpring(1);
         opacity.value = withSpring(1);
       })),
     );
-
-    // imageX.value = 0;
-    // imageY.value = 0;
   }
 
-  // function updateCurrentIndexAndScale() {
-  //   setCurrentImageIndex(prevIndex => {
-  //     const nextIndex = (prevIndex + 1) % images.length;
-  //     return nextIndex;
-  //   });
-  //
-  //   scale.value = withSpring(0, {}, () => {
-  //     opacity.value = 0;
-  //     imageX.value = 0;
-  //     imageY.value = 0;
-  //   });
-  //
-  //   // imageX.value = 0;
-  //   // imageY.value = 0;
-  //   scale.value = withSpring(0, {}, () => {
-  //     opacity.value = 0;
-  //     // imageX.value = 0;
-  //     // imageY.value = 0;
-  //
-  //     scale.value = withSpring(1);
-  //     opacity.value = withSpring(1);
-  //   });
-  // }
-
-  // function updateCurrentIndexAndScale() {
-  //   setCurrentImageIndex(prevIndex => {
-  //     const nextIndex = (prevIndex + 1) % images.length;
-  //     return nextIndex;
-  //   });
-  //
-  //   scale.value = withSpring(0, {}, () => {
-  //     opacity.value = 0;
-  //     imageX.value = 0;
-  //     imageY.value = 0;
-  //
-  //     scale.value = withSpring(1);
-  //     // opacity.value = withSpring(1);
-  //   });
-  // }
+  const firstButtonRef = useRef(null);
+  const secondButtonRef = useRef(null);
 
   return (
     <Animated.View
       style={{
         flex: 1,
-        height: 2200,
+        // height: ß2200,ß
         backgroundColor: '#FFF',
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column',
+        borderWidth: 1,
+        //   justifyContent: 'space-between',
+        //   alignItems: 'center',
+        //   flexDirection: 'column',
       }}
     >
-      <StatusBar hidden={true} />
+      {/*<StatusBar hidden={true} />*/}
       <View style={styles.buttonContainer}>
-        <Animated.View style={[topButtonStyle]}>
-          <TouchableOpacity style={styles.button} title="O">
+        <Animated.View
+          ref={firstButtonRef}
+          onLayout={() => {
+            if (firstButtonRef) {
+              // firstButtonRef.current.measure((x, y, width, height, pageX, pageY) => {
+              //   console.log(x, y, width, height, pageX, pageY);
+              // });
+              firstButtonRef.current.measure((x, y, width, height, pageX, pageY) => {
+                console.log(x, y, width, height, pageX, pageY);
+                setTopButtonLayout({ pageX: pageX, pageY: pageY, width: width, height: height });
+              });
+            }
+          }}
+          style={[
+            {
+              // width: 100,
+              // height: 100,
+              borderWidth: 1,
+              color: '#FFD1DC',
+              fontSize: 40,
+              fontWeight: '100',
+            },
+            topButtonStyle,
+          ]}
+        >
+          <TouchableOpacity title="O" style={styles.button}>
             <Text style={styles.buttonText}>O</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -175,9 +195,31 @@ const SecondTest = () => {
           </GestureDetector>
         </GestureHandlerRootView>
 
-        <TouchableOpacity style={styles.button} title="X">
-          <Text style={styles.buttonText}>X</Text>
-        </TouchableOpacity>
+        <Animated.View
+          style={[
+            {
+              // width: 100,
+              // height: 100,
+              borderWidth: 1,
+              color: '#FFD1DC',
+              fontSize: 40,
+              fontWeight: '100',
+            },
+            bottomButtonStyle,
+          ]}
+          ref={secondButtonRef}
+          onLayout={() => {
+            if (secondButtonRef) {
+              secondButtonRef.current.measure((x, y, width, height, pageX, pageY) => {
+                console.log(x, y, width, height, pageX, pageY);
+              });
+            }
+          }}
+        >
+          <TouchableOpacity title="X" style={styles.button}>
+            <Text style={styles.buttonText}>X</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </Animated.View>
   );
@@ -194,6 +236,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   buttonContainer: {
+    // width: '100%',
     height: '80%',
     justifyContent: 'space-between',
     alignItems: 'center',
